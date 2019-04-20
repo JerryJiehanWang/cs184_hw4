@@ -1,0 +1,305 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    padding: 100px;
+    width: 1000px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+</style>
+<title>CS 184 Cloth Sim</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+
+
+<body>
+
+<h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2019</h1>
+<h1 align="middle">Project 4: Cloth Simulator</h1>
+<h2 align="middle">Jiehan Wang, CS184-aee</h2>
+
+<br><br>
+
+<div>
+
+<h2 align="middle">Overview</h2>
+    <p>In this project, we simulate the physical movement of a cloth by modeling it as a square of point masses,
+    with each point mass connected by springs. We then model the physical attribute of the movement of each point
+    mass and spring to simulate the overall cloth. Additionally, we write some GLSL code to edit the texture of the
+    cloth.</p>
+
+<h2 align="middle">Part I: Masses and springs</h2>
+
+    <div align="center">
+        <table style="width=100%">
+            <tr>
+                <td align="middle">
+                    <img src="images/p1_overall.png" width="480px" />
+                    <figcaption align="middle">Overall layout of the structure.</figcaption>
+                <td align="middle">
+                    <img src="images/p1_no_shear.png" width="480px" />
+                    <figcaption align="middle">With no shearing constraints</figcaption>
+            </tr>
+            <tr>
+                <td align="middle">
+                <img src="images/p1_only_shear.png" width="480px" />
+                <figcaption align="middle">With only shearing constraints</figcaption>
+                <td align="middle">
+                    <img src="images/p1_all.png" width="480px" />
+                    <figcaption align="middle">With all constraints</figcaption>
+            </tr>
+        </table>
+    </div>
+
+    <h2 align="middle">Part 2: Simulation via numerical integration</h2>
+
+    <div align="center">
+            <img src="images/p2_ks_5000.png" width="480px" />
+            <figcaption align="middle">Default parameters.</figcaption>
+    </div>
+
+    <div align="center">
+        <table style="width=100%">
+            <tr>
+                <td align="middle">
+                    <img src="images/p2_ks_500.png" width="480px" />
+                    <figcaption align="middle">ks = 500</figcaption>
+                <td align="middle">
+                    <img src="images/p2_ks_50000.png" width="480px" />
+                    <figcaption align="middle">ks = 50000</figcaption>
+            </tr>
+            <tr>
+                <td align="middle">
+                    <img src="images/p2_density_1.5.png" width="480px" />
+                    <figcaption align="middle">density = 1.5</figcaption>
+                <td align="middle">
+                    <img src="images/p2_density_150.png" width="480px" />
+                    <figcaption align="middle">density = 150</figcaption>
+            </tr>
+            <tr>
+                <td align="middle">
+                    <img src="images/p2_damping_0.03.png" width="480px" />
+                    <figcaption align="middle">damping = 0.03%</figcaption>
+                <td align="middle">
+                    <img src="images/p2_damping_0.85.png" width="480px" />
+                    <figcaption align="middle">damping = 0.85%</figcaption>
+            </tr>
+        </table>
+    </div>
+
+    <p>Low ks means that the force of a spring (force between two point masses) is weaker, and high ks is the other
+    way around. This is why we see that with low ks, the cloth looks kind of "loose", with more folds. Density has
+    the opposite than ks. With high density, the mass of each point mass is increasing, exerting more forces on the
+    springs. So we will see the cloth will have more folds. And with low density, the cloth looks more flat. Damping
+     doesn't affect the final static state of the cloth, so I take the screenshots before the cloth settles down.
+    High damping means that the point masses are more resistive to the change of position, so we will see the cloth
+    is more resistive to deformation before settling down, comparing to low damping.</p>
+
+    <h2 align="middle">Part 3: Handling collisions with other objects</h2>
+    <div align="center">
+        <table style="width=100%">
+            <tr>
+                <td align="middle">
+                    <img src="images/p3_ks_500.png" width="480px" />
+                    <figcaption align="middle">ks = 500</figcaption>
+                <td align="middle">
+                    <img src="images/p3_ks_5000.png" width="480px" />
+                    <figcaption align="middle">ks = 5000</figcaption>
+            </tr>
+            <tr>
+                <td align="middle">
+                    <img src="images/p3_ks_50000.png" width="480px" />
+                    <figcaption align="middle">ks = 50000</figcaption>
+            </tr>
+        </table>
+    </div>
+
+    <p>With increasing ks, the cloth doesn't fit the sphere as much as low ks. That's because ks increases the force
+    springs exerting on point masses, so the force prevents point masses fall and fit the surface of the sphere.</p>
+
+    <div align="center">
+        <table style="width=100%">
+            <tr>
+                <td align="middle">
+                    <img src="images/p3_diffuse_plane.png" width="480px" />
+                    <figcaption align="middle">Cloth falls on the plane with diffuse shading.</figcaption>
+                <td align="middle">
+                    <img src="images/p3_phong_plane.png" width="480px" />
+                    <figcaption align="middle">Cloth falls on the plane with Phong shading. (can't see the cloth)</figcaption>
+            </tr>
+        </table>
+    </div>
+
+    <h2 align="middle">Part 4: Handling self-collisions</h2>
+    <div align="center">
+        <table style="width=100%">
+            <tr>
+                <td align="middle">
+                    <img src="images/p4_initial.png" width="480px" />
+                    <figcaption align="middle">Initial</figcaption>
+                <td align="middle">
+                    <img src="images/p4_middle.png" width="480px" />
+                    <figcaption align="middle">Middle</figcaption>
+            </tr>
+            <tr>
+                <td align="middle">
+                    <img src="images/p4_end.png" width="480px" />
+                    <figcaption align="middle">End</figcaption>
+            </tr>
+            <tr>
+                <td align="middle">
+                    <img src="images/p4_ks_500_mid.png" width="480px" />
+                    <figcaption align="middle">ks = 500, middle</figcaption>
+                <td align="middle">
+                    <img src="images/p4_ks_500_end.png" width="480px" />
+                    <figcaption align="middle">ks = 500, end</figcaption>
+            </tr>
+            <tr>
+                <td align="middle">
+                    <img src="images/p4_ks_50000_mid.png" width="480px" />
+                    <figcaption align="middle">ks = 50000, middle</figcaption>
+                <td align="middle">
+                    <img src="images/p4_ks_50000_end.png" width="480px" />
+                    <figcaption align="middle">ks = 50000, end</figcaption>
+            </tr>
+            <tr>
+                <td align="middle">
+                    <img src="images/p4_d_1.5_mid.png" width="480px" />
+                    <figcaption align="middle">density = 1.5, middle</figcaption>
+                <td align="middle">
+                    <img src="images/p4_d_1.5_end.png" width="480px" />
+                    <figcaption align="middle">density = 1.5, end</figcaption>
+            </tr>
+            <tr>
+                <td align="middle">
+                    <img src="images/p4_d_150_mid.png" width="480px" />
+                    <figcaption align="middle">density = 150, middle</figcaption>
+                <td align="middle">
+                    <img src="images/p4_d_150_end.png" width="480px" />
+                    <figcaption align="middle">density = 150, end</figcaption>
+            </tr>
+        </table>
+    </div>
+
+    <p>We can see that with density fixed to 15, when we increase ks and the cloth is folding itself, it has less folds
+    than smaller ks. That's because ks increases the forces of spring applying on each point masses increases,
+        preventing
+    them folding. Same thing happened with decreasing density when fixed ks. That's because decreasing density decreases
+    the mass of each points increases the forces applied between each point masses, preventing them from folding.</p>
+
+    <h2 align="middle">Part 5: Shaders</h2>
+    <p>A shader is a kind of computer program that is used to dealing the shading problem in computer graphics.
+    (lighting, shadow, color). Vertex shader processes every vertices in the mesh, for example, calculating the
+    coordinate of each vertex and calculating z-buffer etc. Then vertex shader passes its output to the next shader,
+    like geometry shader and fragment shader. Fragment shader usually calculates the color and other attributes of each
+    fragments. Usually, fragment refers to pixels. Fragment shader can not only calculate color, but can also calculate
+    lighting, shadows and highlights, etc.</p>
+
+    <div align="center">
+        <table style="width 100%">
+            <tr>
+                <td align="middle">
+                    <img src="images/p5_phong_ambient.png" width="480px" />
+                    <figcaption align="middle">Only ambient</figcaption>
+                <td align="middle">
+                    <img src="images/p5_phong_diffuse.png" width="480px" />
+                    <figcaption align="middle">Only diffuse</figcaption>
+            </tr>
+            <tr>
+                <td align="middle">
+                    <img src="images/p5_phong_specular.png" width="480px" />
+                    <figcaption align="middle">Only specular</figcaption>
+                <td align="middle">
+                    <img src="images/p5_phong_all.png" width="480px" />
+                    <figcaption align="middle">Overall</figcaption>
+            </tr>
+        </table>
+    </div>
+
+    <p>Phong shading combines the brightness of the reflected light on the surface of a mesh, and uses the surface
+        normal of a specific position as the pixel reference value to estimate the other positions' color value
+        by interpolation. It consists of three components. There are ambient, diffuse and specular lighting.</p>
+    <p>Notice that because I set the factor to be the same color as the background, the only ambient appears to
+    be the same color as the background. Therefore, it seems like there's nothing, but there actually exists a sphere
+     and the cloth.</p>
+
+    <div align="center">
+        <table style="width 100%">
+            <td align="middle">
+                <img src="images/p5_texture.png" width="800px" />
+                <figcaption align="middle">Texture</figcaption>
+    </div>
+
+    <p>I use the screenshot of a recently popular game named Sekiro as my texture.</p>
+
+    <div align="center">
+        <table style="width 100%">
+            <tr>
+                <td align="middle">
+                    <img src="images/p5_displace_sphere.png" width="480px" />
+                    <figcaption align="middle">Sphere of displacement Mapping</figcaption>
+            </tr>
+            <tr>
+                <td align="middle">
+                    <img src="images/p5_bump_sphere.png" width="480px" />
+                    <figcaption align="middle">Sphere of bump mapping</figcaption>
+                <td align="middle">
+                    <img src="images/p5_bump_cloth.png" width="480px" />
+                    <figcaption align="middle">Cloth of bump mapping</figcaption>
+            </tr>
+        </table>
+    </div>
+
+    <p>The only difference between Bump mapping and displacement mapping is that bump mapping
+        doesn't really change the position of the mesh, but only displaying the bumpness of the surface by modify
+    the normal to give an illusion of surface details, while displacement mapping actually changes the position of
+     vertices. That's why we can see in the displacement mapping, there's some vertices point outward to the surface
+    of the sphere.</p>
+
+    <div align="center">
+        <table style="width 100%">
+            <tr>
+                <td align="middle">
+                    <img src="images/p5_displacement_16.png" width="480px" />
+                    <figcaption align="middle">Displacement Mapping on coarse mesh</figcaption>
+                <td align="middle">
+                    <img src="images/p5_displace_128.png" width="480px" />
+                    <figcaption align="middle">Displacement Mapping on fine mesh</figcaption>
+            </tr>
+            <tr>
+                <td align="middle">
+                    <img src="images/p5_bump_16.png" width="480px" />
+                    <figcaption align="middle">Bump Mapping on coarse mesh</figcaption>
+                <td align="middle">
+                    <img src="images/p5_bump_128.png" width="480px" />
+                    <figcaption align="middle">Bump Mapping on fine mesh</figcaption>
+            </tr>
+        </table>
+    </div>
+
+    <p>As the mesh has higher resolution, the displacement mapping shows more displacement of the vertices to the sphere,
+    resulting a more "jig-jag" surface. That's because the number of vertices has increased, so there are more vertices
+        to displace. While we didn't observe much difference of high and low resolution on bump mapping, because we didn't
+     change the actual positions of vertices.</p>
+
+    <div align="center">
+        <img src="images/p5_mirror_cloth.png" width="800px" />
+        <figcaption align="middle">mirror shader of cloth on sphere</figcaption>
+    </div>
+
+    <div align="center">
+        <img src="images/p5_mirror_sphere.png" width="800px" />
+        <figcaption align="middle">mirror shader of sphere</figcaption>
+    </div>
+
+</body>
+</html>
